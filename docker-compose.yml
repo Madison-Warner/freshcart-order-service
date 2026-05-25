@@ -160,6 +160,39 @@ services:
       - freshcart-network
     restart: unless-stopped
 
+  # Delivery Service - FastAPI microservice for delivery scheduling
+  delivery-service:
+    build:
+      context: ./delivery-service
+      dockerfile: Dockerfile
+    container_name: delivery-service
+    ports:
+      # Expose FastAPI application on port 8004
+      - "8004:8004"
+    environment:
+      # RabbitMQ connection details
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Application environment
+      DEBUG: "false"
+    volumes:
+      # Mount app directory for development (optional - remove for production)
+      - ./delivery-service/app:/app/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - freshcart-network
+    restart: unless-stopped
+
 # Named volume for RabbitMQ persistence
 volumes:
   rabbitmq_data:
