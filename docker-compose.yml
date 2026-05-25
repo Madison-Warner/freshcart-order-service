@@ -94,6 +94,39 @@ services:
       - freshcart-network
     restart: unless-stopped
 
+  # Inventory Service - FastAPI microservice for stock management
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    ports:
+      # Expose FastAPI application on port 8002
+      - "8002:8002"
+    environment:
+      # RabbitMQ connection details
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Application environment
+      DEBUG: "false"
+    volumes:
+      # Mount app directory for development (optional - remove for production)
+      - ./inventory-service/app:/app/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - freshcart-network
+    restart: unless-stopped
+
 # Named volume for RabbitMQ persistence
 volumes:
   rabbitmq_data:
